@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Center glowing pulse circle -->
+    <path
+        android:fillColor="#1510E57A"
+        android:pathData="M54,54m-28,0a28,28 0 1,0 56,0a28,28 0 1,0 -56,0" />
+    <!-- Telecaller Phone & Analytics Icon -->
+    <path
+        android:fillColor="#10E57A"
+        android:pathData="M38.5,36.5C40,35 42.5,35 44,36.5L48,40.5C49.5,42 49.5,44.5 48,46L46,48C45.5,48.5 45.3,49.2 45.6,49.8C47.2,53.2 50.8,56.8 54.2,58.4C54.8,58.7 55.5,58.5 56,58L58,56C59.5,54.5 62,54.5 63.5,56L67.5,60C69,61.5 69,64 67.5,65.5L65,68C63.5,69.5 61,70.5 58,69.5C50,67 41,58 38.5,50C37.5,47 38.5,44.5 40,43L38.5,36.5Z" />
+    <!-- Live Signal Wave Bars -->
+    <path
+        android:fillColor="#4F8FFF"
+        android:pathData="M64,36h3v14h-3z" />
+    <path
+        android:fillColor="#10E57A"
+        android:pathData="M70,30h3v20h-3z" />
+    <path
+        android:fillColor="#3880FF"
+        android:pathData="M58,42h3v8h-3z" />
+</vector>
