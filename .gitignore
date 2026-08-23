@@ -15,4 +15,8 @@
 .cxx
 local.properties
 .env
+.env.local
 debug.keystore
+.build-outputs/
+app/build/
+build/
