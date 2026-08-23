@@ -52,9 +52,9 @@ jobs:
         run: |
           if [ -f "./gradlew" ]; then
             chmod +x gradlew
-            ./gradlew :app:assembleDebug --no-daemon -Djava.awt.headless=true --stacktrace
+            ./gradlew :app:assembleDebug --no-configuration-cache --no-daemon -Djava.awt.headless=true --stacktrace --info
           else
-            gradle :app:assembleDebug --no-daemon -Djava.awt.headless=true --stacktrace
+            gradle :app:assembleDebug --no-configuration-cache --no-daemon -Djava.awt.headless=true --stacktrace --info
           fi
 
       - name: Upload Debug APK Artifact
