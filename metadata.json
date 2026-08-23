@@ -2,5 +2,7 @@
   "name": "JobsIndia247 Tracking",
   "description": "Enterprise telecaller live tracking dashboard with call monitoring, performance audit, Google Sheet sync, follow-up portal and Firebase backend.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
