@@ -15,7 +15,7 @@ jobs:
     env:
       JAVA_OPTS: "-Djava.awt.headless=true -Xmx3072m"
       _JAVA_OPTIONS: "-Djava.awt.headless=true -Xmx3072m"
-      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.configuration-cache=false -Dorg.gradle.caching=false -Djava.awt.headless=true"
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.configuration-cache=false -Dorg.gradle.caching=false -Dorg.gradle.warning.mode=none -Djava.awt.headless=true"
 
     steps:
       - name: Checkout Repository
@@ -29,6 +29,11 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-disabled: true
 
       - name: Prepare Secrets and Environment
         run: |
@@ -77,20 +82,21 @@ jobs:
           # Accept all licenses
           yes | sdkmanager --licenses 2>/dev/null || true
 
-      - name: Build Debug APK with Gradle
+      - name: Build Debug APK
         run: |
           gradle :app:assembleDebug \
             --no-daemon \
             --no-configuration-cache \
             --no-build-cache \
+            --warning-mode none \
             -Dorg.gradle.configuration-cache=false \
             -Djava.awt.headless=true \
             --stacktrace
 
-      - name: Verify and Upload Debug APK Artifact
+      - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: jobsindia247-telecaller-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14
