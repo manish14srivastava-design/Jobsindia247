@@ -12,6 +12,10 @@ jobs:
     name: Build Android Debug APK
     runs-on: ubuntu-latest
 
+    env:
+      JAVA_OPTS: "-Djava.awt.headless=true"
+      _JAVA_OPTIONS: "-Djava.awt.headless=true"
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -33,9 +37,9 @@ jobs:
         run: |
           if [ -f "./gradlew" ]; then
             chmod +x gradlew
-            ./gradlew :app:assembleDebug --stacktrace
+            ./gradlew :app:assembleDebug -Djava.awt.headless=true --stacktrace
           else
-            gradle :app:assembleDebug --stacktrace
+            gradle :app:assembleDebug -Djava.awt.headless=true --stacktrace
           fi
 
       - name: Upload Debug APK Artifact
