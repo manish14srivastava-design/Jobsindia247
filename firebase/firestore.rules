@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions for Role-Based Access Control (RBAC)
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwnerOrAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'admin' || 
+        request.auth.token.role == 'owner' || 
+        request.auth.token.email.matches('.*admin.*')
+      );
+    }
+    
+    function isTeamLeader(teamLeaderId) {
+      return isAuthenticated() && (
+        request.auth.token.role == 'team_leader' && 
+        request.auth.token.teamLeaderId == teamLeaderId
+      );
+    }
+    
+    function isAssignedEmployee(employeeId) {
+      return isAuthenticated() && (
+        request.auth.token.employeeId == employeeId
+      );
+    }
+
+    // Leads collection: Scoped by employee, team leader, and owner
+    match /leads/{leadId} {
+      allow read: if isOwnerOrAdmin() || 
+                     (isAuthenticated() && resource.data.employeeId == request.auth.token.employeeId) ||
+                     (isAuthenticated() && resource.data.teamLeaderId == request.auth.token.teamLeaderId);
+                     
+      allow write: if isOwnerOrAdmin() || 
+                      (isAuthenticated() && request.resource.data.assignedEmployeeId == request.auth.token.employeeId);
+    }
+
+    // Activity Records & Audit Logs: Append-only for callers, full access for TL/Admin
+    match /activity_records/{activityId} {
+      allow read: if isOwnerOrAdmin() || 
+                     (isAuthenticated() && resource.data.employeeId == request.auth.token.employeeId) ||
+                     (isAuthenticated() && resource.data.teamLeaderId == request.auth.token.teamLeaderId);
+      allow create: if isAuthenticated();
+      allow update, delete: if isOwnerOrAdmin();
+    }
+
+    match /audit_logs/{logId} {
+      allow read: if isOwnerOrAdmin() || 
+                     (isAuthenticated() && resource.data.teamLeaderId == request.auth.token.teamLeaderId);
+      allow create: if isAuthenticated();
+      allow update, delete: if isOwnerOrAdmin();
+    }
+
+    // Follow-up records
+    match /followup_records/{recordId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Organization Metadata: Companies, Team Leaders, Employees, Departments
+    match /companies/{companyId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwnerOrAdmin();
+    }
+
+    match /team_leaders/{tlId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwnerOrAdmin();
+    }
+
+    match /employees/{employeeId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwnerOrAdmin();
+    }
+
+    match /departments/{deptId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwnerOrAdmin();
+    }
+
+    // System Health & Live Diagnostics Ping
+    match /systemHealth/{healthId} {
+      allow read, write, delete: if isAuthenticated() || isOwnerOrAdmin();
+    }
+  }
+}
