@@ -13,8 +13,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      JAVA_OPTS: "-Djava.awt.headless=true"
-      _JAVA_OPTIONS: "-Djava.awt.headless=true"
+      JAVA_OPTS: "-Djava.awt.headless=true -Xmx3072m"
+      _JAVA_OPTIONS: "-Djava.awt.headless=true -Xmx3072m"
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.configuration-cache=false -Dorg.gradle.caching=false -Djava.awt.headless=true"
 
     steps:
       - name: Checkout Repository
@@ -25,39 +26,68 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Setup Build Environment
+      - name: Prepare Secrets and Environment
         run: |
           # Ensure .env exists for Secrets Gradle Plugin
           if [ ! -f ".env" ] && [ -f ".env.example" ]; then
             cp .env.example .env
+          elif [ ! -f ".env" ]; then
+            touch .env
           fi
 
-          # Decode debug keystore if base64 file exists
-          if [ -f "debug.keystore.base64" ]; then
-            base64 -d debug.keystore.base64 > debug.keystore 2>/dev/null || true
+          # Ensure app/google-services.json exists
+          if [ ! -f "app/google-services.json" ]; then
+            cat << 'EOF' > app/google-services.json
+          {
+            "project_info": {
+              "project_number": "123456789012",
+              "project_id": "jobsindia247-tracking",
+              "storage_bucket": "jobsindia247-tracking.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:123456789012:android:abcdef0123456789abcdef",
+                  "android_client_info": {
+                    "package_name": "com.aistudio.jobsindia247.trkzpm"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyDummyKeyForCiBuildPipeline123456"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
           fi
 
-          # Accept Android licenses
+          # Accept all licenses
           yes | sdkmanager --licenses 2>/dev/null || true
 
-      - name: Build Debug APK
+      - name: Build Debug APK with Gradle
         run: |
-          if [ -f "./gradlew" ]; then
-            chmod +x gradlew
-            ./gradlew :app:assembleDebug --no-configuration-cache --no-daemon -Djava.awt.headless=true --stacktrace --info
-          else
-            gradle :app:assembleDebug --no-configuration-cache --no-daemon -Djava.awt.headless=true --stacktrace --info
-          fi
+          gradle :app:assembleDebug \
+            --no-daemon \
+            --no-configuration-cache \
+            --no-build-cache \
+            -Dorg.gradle.configuration-cache=false \
+            -Djava.awt.headless=true \
+            --stacktrace
 
-      - name: Upload Debug APK Artifact
+      - name: Verify and Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: jobsindia247-telecaller-debug-apk
