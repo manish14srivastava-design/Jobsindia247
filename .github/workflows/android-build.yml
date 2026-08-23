@@ -33,13 +33,28 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Setup Build Environment
+        run: |
+          # Ensure .env exists for Secrets Gradle Plugin
+          if [ ! -f ".env" ] && [ -f ".env.example" ]; then
+            cp .env.example .env
+          fi
+
+          # Decode debug keystore if base64 file exists
+          if [ -f "debug.keystore.base64" ]; then
+            base64 -d debug.keystore.base64 > debug.keystore 2>/dev/null || true
+          fi
+
+          # Accept Android licenses
+          yes | sdkmanager --licenses 2>/dev/null || true
+
       - name: Build Debug APK
         run: |
           if [ -f "./gradlew" ]; then
             chmod +x gradlew
-            ./gradlew :app:assembleDebug -Djava.awt.headless=true --stacktrace
+            ./gradlew :app:assembleDebug --no-daemon -Djava.awt.headless=true --stacktrace
           else
-            gradle :app:assembleDebug -Djava.awt.headless=true --stacktrace
+            gradle :app:assembleDebug --no-daemon -Djava.awt.headless=true --stacktrace
           fi
 
       - name: Upload Debug APK Artifact
