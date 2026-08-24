@@ -35,7 +35,6 @@ jobs:
         with:
           gradle-version: "9.3.1"
           cache-disabled: true
-          validate-wrappers: false
 
       - name: Prepare Secrets and Environment
         run: |
