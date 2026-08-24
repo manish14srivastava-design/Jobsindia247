@@ -34,6 +34,10 @@ sealed class Screen(val route: String, val title: String, val icon: androidx.com
     object OwnerLogin : Screen("owner_login", "Owner Login", Icons.Default.AdminPanelSettings)
     object TeamLeaderLogin : Screen("tl_login", "Team Leader Login", Icons.Default.SupervisorAccount)
     object EmployeeLogin : Screen("employee_login", "Employee Login", Icons.Default.HeadsetMic)
+    object WorkspaceSyncLoading : Screen("workspace_sync_loading/{role}/{tlId}/{empId}", "Syncing Workspace", Icons.Default.Sync) {
+        fun createRoute(role: UserRole, tlId: String = "none", empId: String = "none") =
+            "workspace_sync_loading/${role.name}/$tlId/$empId"
+    }
     object EmployeeWork : Screen("employee_work", "Today's Work Inbox", Icons.Default.Today)
     object TeamLeaderDashboard : Screen("tl_dashboard", "Supervisor Dashboard", Icons.Default.SupervisorAccount)
     object Dashboard : Screen("dashboard", "Live Dashboard", Icons.Default.Dashboard)
@@ -42,6 +46,7 @@ sealed class Screen(val route: String, val title: String, val icon: androidx.com
     object Companies : Screen("companies", "Company Summary", Icons.Default.Business)
     object TeamLeaders : Screen("team_leaders", "Team Leaders", Icons.Default.SupervisorAccount)
     object TopPerformers : Screen("top_performers", "Top Performers", Icons.Default.EmojiEvents)
+    object DataSyncDebug : Screen("data_sync_debug", "Data Sync Debug", Icons.Default.BugReport)
     object FirebaseHealth : Screen("firebase_health", "Cloud Diagnostics", Icons.Default.CloudDone)
     object Admin : Screen("admin", "Admin Settings", Icons.Default.Settings)
     object EmployeeDetail : Screen("employee/{employeeId}", "Employee Details", Icons.Default.Person) {
@@ -77,6 +82,7 @@ fun MainAppContent() {
             currentRoute == Screen.OwnerLogin.route ||
             currentRoute == Screen.TeamLeaderLogin.route ||
             currentRoute == Screen.EmployeeLogin.route ||
+            (currentRoute?.startsWith("workspace_sync_loading") == true) ||
             currentRoute == Screen.EmployeeWork.route
 
     val drawerItems = if (userSession.role == UserRole.TEAM_LEADER) {
@@ -92,6 +98,7 @@ fun MainAppContent() {
             Screen.Companies,
             Screen.TeamLeaders,
             Screen.TopPerformers,
+            Screen.DataSyncDebug,
             Screen.FirebaseHealth,
             Screen.Admin
         )
@@ -240,8 +247,8 @@ fun MainAppContent() {
                         OwnerLoginScreen(
                             viewModel = viewModel,
                             onLoginSuccess = {
-                                navController.navigate(Screen.Dashboard.route) {
-                                    popUpTo(Screen.RoleLogin.route) { inclusive = true }
+                                navController.navigate(Screen.WorkspaceSyncLoading.createRoute(UserRole.OWNER)) {
+                                    popUpTo(Screen.RoleLogin.route) { inclusive = false }
                                 }
                             },
                             onBack = { navController.popBackStack() }
@@ -253,8 +260,9 @@ fun MainAppContent() {
                         TeamLeaderLoginScreen(
                             viewModel = viewModel,
                             onLoginSuccess = {
-                                navController.navigate(Screen.TeamLeaderDashboard.route) {
-                                    popUpTo(Screen.RoleLogin.route) { inclusive = true }
+                                val tlId = userSession.teamLeaderId ?: "none"
+                                navController.navigate(Screen.WorkspaceSyncLoading.createRoute(UserRole.TEAM_LEADER, tlId = tlId)) {
+                                    popUpTo(Screen.RoleLogin.route) { inclusive = false }
                                 }
                             },
                             onBack = { navController.popBackStack() }
@@ -266,11 +274,51 @@ fun MainAppContent() {
                         EmployeeLoginFlowScreen(
                             viewModel = viewModel,
                             onLoginSuccess = {
-                                navController.navigate(Screen.EmployeeWork.route) {
-                                    popUpTo(Screen.RoleLogin.route) { inclusive = true }
+                                val tlId = userSession.teamLeaderId ?: "none"
+                                val empId = userSession.employeeId ?: "none"
+                                navController.navigate(Screen.WorkspaceSyncLoading.createRoute(UserRole.EMPLOYEE, tlId = tlId, empId = empId)) {
+                                    popUpTo(Screen.RoleLogin.route) { inclusive = false }
                                 }
                             },
                             onBack = { navController.popBackStack() }
+                        )
+                    }
+
+                    // Workspace Sync Loading & Cloud Verification
+                    composable(
+                        route = Screen.WorkspaceSyncLoading.route,
+                        arguments = listOf(
+                            navArgument("role") { type = NavType.StringType },
+                            navArgument("tlId") { type = NavType.StringType; defaultValue = "none" },
+                            navArgument("empId") { type = NavType.StringType; defaultValue = "none" }
+                        )
+                    ) { backStackEntry ->
+                        val roleStr = backStackEntry.arguments?.getString("role") ?: "NONE"
+                        val tlId = backStackEntry.arguments?.getString("tlId")?.takeIf { it != "none" }
+                        val empId = backStackEntry.arguments?.getString("empId")?.takeIf { it != "none" }
+                        val targetRole = try { UserRole.valueOf(roleStr) } catch (e: Exception) { UserRole.NONE }
+
+                        WorkspaceSyncLoadingScreen(
+                            viewModel = viewModel,
+                            targetRole = targetRole,
+                            targetTlId = tlId,
+                            targetEmployeeId = empId,
+                            onSyncSuccess = {
+                                val destination = when (targetRole) {
+                                    UserRole.OWNER -> Screen.Dashboard.route
+                                    UserRole.TEAM_LEADER -> Screen.TeamLeaderDashboard.route
+                                    UserRole.EMPLOYEE -> Screen.EmployeeWork.route
+                                    UserRole.NONE -> Screen.RoleLogin.route
+                                }
+                                navController.navigate(destination) {
+                                    popUpTo(Screen.RoleLogin.route) { inclusive = true }
+                                }
+                            },
+                            onCancel = {
+                                navController.navigate(Screen.RoleLogin.route) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
                         )
                     }
 
@@ -360,7 +408,16 @@ fun MainAppContent() {
                         )
                     }
 
-                    // 14. Firebase Health & Cloud Diagnostics
+                    // 14. Data Sync Debug Screen
+                    composable(Screen.DataSyncDebug.route) {
+                        DataSyncDebugScreen(
+                            viewModel = viewModel,
+                            onBack = { navController.popBackStack() },
+                            onOpenDrawer = { scope.launch { drawerState.open() } }
+                        )
+                    }
+
+                    // 15. Firebase Health & Cloud Diagnostics
                     composable(Screen.FirebaseHealth.route) {
                         FirebaseHealthScreen(
                             viewModel = viewModel,
@@ -368,7 +425,7 @@ fun MainAppContent() {
                         )
                     }
 
-                    // 15. Admin Settings
+                    // 16. Admin Settings
                     composable(Screen.Admin.route) {
                         AdminSettingsScreen(
                             viewModel = viewModel,
@@ -376,7 +433,7 @@ fun MainAppContent() {
                         )
                     }
 
-                    // 16. Employee Detail
+                    // 17. Employee Detail
                     composable(
                         route = Screen.EmployeeDetail.route,
                         arguments = listOf(navArgument("employeeId") { type = NavType.StringType })

@@ -207,10 +207,43 @@ class TrackingViewModel(val repository: TrackingRepository = TrackingRepository(
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     // --- Authentication Actions ---
+    fun clearWorkspaceState() {
+        repository.clearWorkspaceState()
+        _searchQuery.value = ""
+        _selectedCompanyFilter.value = "all"
+        _selectedTlFilter.value = "all"
+        _selectedStatusFilter.value = "all"
+        _portalDepartmentId.value = null
+        _portalCompanyId.value = null
+        _portalTlId.value = null
+        _portalEmployeeId.value = null
+        _portalTab.value = "CALLING_QUEUE"
+        _diagnosticResult.value = null
+    }
+
     fun loginOwner(password: String): Boolean = repository.loginAsOwner(password)
     fun loginTeamLeader(tlId: String, password: String): Boolean = repository.loginAsTeamLeader(tlId, password)
     fun loginEmployee(deptId: String, tlId: String, empId: String) = repository.loginAsEmployee(deptId, tlId, empId)
-    fun logout() = repository.logout()
+    fun loginAndSyncEmployee(
+        deptId: String,
+        tlId: String,
+        empId: String,
+        onProgress: (String) -> Unit = {},
+        onComplete: (Boolean, Int, String?) -> Unit = { _, _, _ -> }
+    ) {
+        repository.loginAsEmployee(deptId, tlId, empId)
+        repository.syncEmployeeSheet(empId, onProgress, onComplete)
+    }
+    fun loginAndSyncEmployee(deptId: String, tlId: String, empId: String, onDone: () -> Unit) {
+        repository.loginAsEmployee(deptId, tlId, empId)
+        repository.syncEmployeeSheet(empId, onProgress = {}) { _, _, _ ->
+            onDone()
+        }
+    }
+    fun logout() {
+        clearWorkspaceState()
+        repository.logout()
+    }
 
     // --- Work Queue Actions ---
     fun submitLeadRemark(leadId: String, employeeId: String, remark: String, note: String?, followUpAt: Long?) {
@@ -316,6 +349,20 @@ class TrackingViewModel(val repository: TrackingRepository = TrackingRepository(
 
     fun deleteDepartment(id: String) {
         repository.deleteDepartment(id)
+    }
+
+    private val _isLoadingEmployees = MutableStateFlow(false)
+    val isLoadingEmployees: StateFlow<Boolean> = _isLoadingEmployees.asStateFlow()
+
+    fun fetchEmployeesForTl(tlId: String) {
+        viewModelScope.launch {
+            _isLoadingEmployees.value = true
+            try {
+                repository.loadEmployeesForTeamLeader(tlId)
+            } finally {
+                _isLoadingEmployees.value = false
+            }
+        }
     }
 
     // --- Diagnostic Suite Triggers ---

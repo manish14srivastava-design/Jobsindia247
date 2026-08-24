@@ -300,24 +300,42 @@ object RemarkConstants {
         if (raw.isNullOrBlank()) return ""
         val clean = raw.trim()
         val lower = clean.lowercase()
-        return when {
-            lower == "interested" || lower.startsWith("interest") || (lower.contains("interested") && !lower.contains("not") && !lower.contains("不感兴趣")) -> INTERESTED
-            lower.contains("not interested") || lower.contains("not intrested") || lower.contains("not intrest") || lower.contains("不感兴趣") -> NOT_INTERESTED
-            lower.contains("no answer") || lower.contains("not answer") || lower.contains("did not pick") || lower.contains("不接") || lower.contains("打不通") -> NO_ANSWER
-            lower.contains("switch off") || lower.contains("switched off") || lower.contains("关机") -> SWITCH_OFF
-            lower.contains("not reachable") || lower.contains("unreachable") || lower.contains("无法接通") -> NOT_REACHABLE
-            lower.contains("not available") || lower.contains("unavailable") -> NOT_AVAILABLE
-            lower.contains("callback") || lower.contains("call back") || lower.contains("call again") -> CALLBACK
-            lower.contains("follow up") || lower.contains("followup") || lower.contains("follow-up") -> FOLLOW_UP
-            lower.contains("pick but not speak") || lower.contains("silent") || lower.contains("接听不说话") -> PICK_NOT_SPEAK
-            lower.contains("incoming call not connecting") || lower.contains("not connecting") || lower.contains("network error") -> INC_NOT_CONN
-            lower.contains("invalid") || lower.contains("invailid") || lower.contains("wrong number") || lower.contains("wrong no") -> INVALID
-            lower.contains("language") || lower.contains("language barrier") -> LANGUAGE_BARRIER
-            lower.contains("successful") || lower.contains("success") || lower.contains("converted") -> SUCCESSFUL
-            lower.contains("done") || lower.contains("completed") -> DONE
-            lower.contains("pending") || lower.contains("待拨打") -> PENDING
-            else -> clean
+
+        // Pure non-remark placeholders and filler strings
+        if (clean == "-" || clean == "--" || clean == "—" || clean == "na" || clean == "n/a" || clean == "nil" ||
+            clean == "null" || clean == "none" || clean == "0" || clean == "." || clean == ".." ||
+            lower == "pending" || lower == "pending dialing" || lower == "uncalled" || lower == "to call" ||
+            lower == "dial" || lower.startsWith("customer") || lower.startsWith("lead") || clean.all { it.isDigit() }
+        ) {
+            return ""
         }
+
+        return when {
+            lower == "interested" || lower.startsWith("interest") || lower.contains("intrest") || (lower.contains("interested") && !lower.contains("not") && !lower.contains("不感兴趣")) -> INTERESTED
+            lower.contains("not interested") || lower.contains("not intrested") || lower.contains("not intrest") || lower.contains("no need") || lower.contains("not required") || lower.contains("refuse") || lower.contains("不感兴趣") -> NOT_INTERESTED
+            lower == "rnr" || lower.contains("rnr") || lower.contains("no answer") || lower.contains("not answer") || lower.contains("did not pick") || lower.contains("ringing") || lower.contains("not pick") || lower.contains("cut call") || lower.contains("busy") || lower.contains("disconnect") || lower.contains("不接") || lower.contains("打不通") -> NO_ANSWER
+            lower.contains("switch off") || lower.contains("switched off") || lower.contains("power off") || lower.contains("关机") -> SWITCH_OFF
+            lower.contains("not reachable") || lower.contains("unreachable") || lower.contains("out of coverage") || lower.contains("network issue") || lower.contains("无法接通") -> NOT_REACHABLE
+            lower.contains("not available") || lower.contains("unavailable") || lower.contains("call later") -> NOT_AVAILABLE
+            lower.contains("callback") || lower.contains("call back") || lower.contains("call again") || lower.contains("reschedule") -> CALLBACK
+            lower.contains("follow up") || lower.contains("followup") || lower.contains("follow-up") -> FOLLOW_UP
+            lower.contains("pick but not speak") || lower.contains("silent") || lower.contains("mute") || lower.contains("接听不说话") -> PICK_NOT_SPEAK
+            lower.contains("incoming call not connecting") || lower.contains("not connecting") || lower.contains("network error") -> INC_NOT_CONN
+            lower.contains("invalid") || lower.contains("invailid") || lower.contains("wrong number") || lower.contains("wrong no") || lower.contains("blocked") -> INVALID
+            lower.contains("language") || lower.contains("language barrier") -> LANGUAGE_BARRIER
+            lower.contains("successful") || lower.contains("success") || lower.contains("converted") || lower.contains("deposit") || lower.contains("register") -> SUCCESSFUL
+            lower == "done" || lower.contains("done") || lower.contains("completed") -> DONE
+            else -> {
+                // If it contains recognizable text longer than 2 characters and not pure numbers/IDs
+                if (clean.length in 2..40 && !clean.all { it.isDigit() } && !clean.contains("http", ignoreCase = true)) clean else ""
+            }
+        }
+    }
+
+    fun isValidRemark(raw: String?): Boolean {
+        if (raw.isNullOrBlank()) return false
+        val normalized = normalize(raw)
+        return normalized.isNotBlank() && !normalized.equals(PENDING, ignoreCase = true)
     }
 
     fun isConnected(remark: String): Boolean {

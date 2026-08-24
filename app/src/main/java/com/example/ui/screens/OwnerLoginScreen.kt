@@ -46,7 +46,7 @@ fun OwnerLoginScreen(
             errorMessage = null
             onLoginSuccess()
         } else {
-            errorMessage = "Invalid password. Default: Jobsindia@14247"
+            errorMessage = "Incorrect administrator password"
         }
     }
 
@@ -117,7 +117,7 @@ fun OwnerLoginScreen(
                         errorMessage = null
                     },
                     label = { Text("Master Password") },
-                    placeholder = { Text("Jobsindia@14247") },
+                    placeholder = { Text("••••••••") },
                     singleLine = true,
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),

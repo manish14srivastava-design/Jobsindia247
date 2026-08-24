@@ -49,7 +49,9 @@ fun TeamLeaderDashboardScreen(
     }
 
     val teamLeads = remember(leads, userSession) {
-        leads.filter { it.teamLeaderId == userSession.teamLeaderId }
+        val allTlLeads = leads.filter { it.teamLeaderId == userSession.teamLeaderId }
+        val todayOnly = allTlLeads.filter { it.isToday }
+        if (todayOnly.isNotEmpty()) todayOnly else allTlLeads
     }
 
     val totalReps = teamStats.size

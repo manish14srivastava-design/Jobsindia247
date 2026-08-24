@@ -116,34 +116,60 @@ fun TopPerformersScreen(
 
         when (selectedTab) {
             "employees" -> {
-                itemsIndexed(topEmployees) { idx, stat ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onNavigateEmployee(stat.employee.id) },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = BrandNavySurface),
-                        border = CardDefaults.outlinedCardBorder().copy(brush = Brush.verticalGradient(listOf(Color(0x33FFFFFF), Color(0x11FFFFFF))))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                if (topEmployees.isEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = BrandNavySurface)
                         ) {
-                            RankBadge(rank = idx + 1)
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(stat.employee.name, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                            Column(
+                                modifier = Modifier.padding(24.dp).fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(Icons.Default.Leaderboard, contentDescription = null, tint = BrandTextSecondary, modifier = Modifier.size(36.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("No Live Calling Records Yet", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                 Text(
-                                    "${stat.company?.name ?: "—"} · TL ${stat.teamLeader?.name ?: "—"}",
-                                    fontSize = 11.sp,
-                                    color = BrandTextSecondary
+                                    "Rankings are dynamically calculated from real employee calls logged in Google Sheets and Firestore.",
+                                    color = BrandTextSecondary,
+                                    fontSize = 11.5.sp,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    modifier = Modifier.padding(top = 4.dp)
                                 )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                CompletionBar(pct = stat.completion, height = 5)
                             }
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text("${stat.done}", fontWeight = FontWeight.Bold, color = BrandGreenPrimary, fontSize = 18.sp)
-                                Text("calls", fontSize = 10.sp, color = BrandTextMuted)
+                        }
+                    }
+                } else {
+                    itemsIndexed(topEmployees) { idx, stat ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onNavigateEmployee(stat.employee.id) },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = BrandNavySurface),
+                            border = CardDefaults.outlinedCardBorder().copy(brush = Brush.verticalGradient(listOf(Color(0x33FFFFFF), Color(0x11FFFFFF))))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                RankBadge(rank = idx + 1)
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(stat.employee.name, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                                    Text(
+                                        "${stat.company?.name ?: "—"} · TL ${stat.teamLeader?.name ?: "—"}",
+                                        fontSize = 11.sp,
+                                        color = BrandTextSecondary
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    CompletionBar(pct = stat.completion, height = 5)
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text("${stat.done}", fontWeight = FontWeight.Bold, color = BrandGreenPrimary, fontSize = 18.sp)
+                                    Text("calls", fontSize = 10.sp, color = BrandTextMuted)
+                                }
                             }
                         }
                     }
@@ -151,26 +177,46 @@ fun TopPerformersScreen(
             }
 
             "teams" -> {
-                itemsIndexed(topTeams) { idx, (tlName, compName, done) ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = BrandNavySurface),
-                        border = CardDefaults.outlinedCardBorder().copy(brush = Brush.verticalGradient(listOf(Color(0x33FFFFFF), Color(0x11FFFFFF))))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                if (topTeams.isEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = BrandNavySurface)
                         ) {
-                            RankBadge(rank = idx + 1)
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(tlName, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
-                                Text(compName, fontSize = 11.sp, color = BrandTextSecondary)
+                            Column(
+                                modifier = Modifier.padding(24.dp).fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(Icons.Default.SupervisorAccount, contentDescription = null, tint = BrandTextSecondary, modifier = Modifier.size(36.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("No Live Team Records", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text("Team statistics will appear here when real call records are synced.", color = BrandTextSecondary, fontSize = 11.5.sp)
                             }
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text("$done", fontWeight = FontWeight.Bold, color = BrandBlueSecondary, fontSize = 18.sp)
-                                Text("total calls", fontSize = 10.sp, color = BrandTextMuted)
+                        }
+                    }
+                } else {
+                    itemsIndexed(topTeams) { idx, (tlName, compName, done) ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = BrandNavySurface),
+                            border = CardDefaults.outlinedCardBorder().copy(brush = Brush.verticalGradient(listOf(Color(0x33FFFFFF), Color(0x11FFFFFF))))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                RankBadge(rank = idx + 1)
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(tlName, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                                    Text(compName, fontSize = 11.sp, color = BrandTextSecondary)
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text("$done", fontWeight = FontWeight.Bold, color = BrandBlueSecondary, fontSize = 18.sp)
+                                    Text("total calls", fontSize = 10.sp, color = BrandTextMuted)
+                                }
                             }
                         }
                     }
@@ -178,26 +224,46 @@ fun TopPerformersScreen(
             }
 
             "companies" -> {
-                itemsIndexed(topCompanies) { idx, (cName, ind, done) ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = BrandNavySurface),
-                        border = CardDefaults.outlinedCardBorder().copy(brush = Brush.verticalGradient(listOf(Color(0x33FFFFFF), Color(0x11FFFFFF))))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                if (topCompanies.isEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = BrandNavySurface)
                         ) {
-                            RankBadge(rank = idx + 1)
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(cName, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
-                                Text(ind, fontSize = 11.sp, color = BrandTextSecondary)
+                            Column(
+                                modifier = Modifier.padding(24.dp).fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(Icons.Default.Business, contentDescription = null, tint = BrandTextSecondary, modifier = Modifier.size(36.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("No Live Company Records", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text("Company aggregate performance will calculate automatically from live leads.", color = BrandTextSecondary, fontSize = 11.5.sp)
                             }
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text("$done", fontWeight = FontWeight.Bold, color = BrandGreenPrimary, fontSize = 18.sp)
-                                Text("total calls", fontSize = 10.sp, color = BrandTextMuted)
+                        }
+                    }
+                } else {
+                    itemsIndexed(topCompanies) { idx, (cName, ind, done) ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = BrandNavySurface),
+                            border = CardDefaults.outlinedCardBorder().copy(brush = Brush.verticalGradient(listOf(Color(0x33FFFFFF), Color(0x11FFFFFF))))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                RankBadge(rank = idx + 1)
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(cName, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                                    Text(ind, fontSize = 11.sp, color = BrandTextSecondary)
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text("$done", fontWeight = FontWeight.Bold, color = BrandGreenPrimary, fontSize = 18.sp)
+                                    Text("total calls", fontSize = 10.sp, color = BrandTextMuted)
+                                }
                             }
                         }
                     }

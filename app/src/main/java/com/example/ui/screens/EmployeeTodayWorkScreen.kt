@@ -62,6 +62,16 @@ fun EmployeeTodayWorkScreen(
     val syncStatusInfo by viewModel.syncStatusInfo.collectAsState()
     var showSyncInfoDialog by remember { mutableStateOf(false) }
 
+    LaunchedEffect(userSession.employeeId) {
+        val empId = userSession.employeeId
+        if (!empId.isNullOrBlank()) {
+            val hasLeads = leads.any { it.assignedEmployeeId == empId }
+            if (!hasLeads) {
+                viewModel.syncEmployee(empId) {}
+            }
+        }
+    }
+
     val currentEmployee = remember(userSession, employees) {
         employees.find { it.id == userSession.employeeId }
     }
@@ -102,12 +112,14 @@ fun EmployeeTodayWorkScreen(
 
     val totalAssigned = myLeads.size
     val totalAllSheetCount = allEmployeeLeads.size
-    val pendingLeads = remember(myLeads) { myLeads.filter { it.status == "PENDING" && it.currentRemark.isBlank() } }
+    val pendingLeads = remember(myLeads) {
+        myLeads.filter { it.currentRemark.isBlank() || it.currentRemark.equals(RemarkConstants.PENDING, ignoreCase = true) }
+    }
     val interestedLeads = remember(myLeads) {
         myLeads.filter { it.status == "INTERESTED" || it.currentRemark.equals(RemarkConstants.INTERESTED, ignoreCase = true) }
     }
     val doneLeads = remember(myLeads) {
-        myLeads.filter { it.status == "SUCCESSFUL" || it.status == "COMPLETED" || (it.currentRemark.isNotBlank() && !it.currentRemark.equals(RemarkConstants.PENDING, ignoreCase = true) && !it.currentRemark.equals(RemarkConstants.INTERESTED, ignoreCase = true)) }
+        myLeads.filter { it.currentRemark.isNotBlank() && !it.currentRemark.equals(RemarkConstants.PENDING, ignoreCase = true) }
     }
     val successfulLeads = remember(myLeads) {
         myLeads.filter { it.status == "SUCCESSFUL" || it.currentRemark.equals(RemarkConstants.SUCCESSFUL, ignoreCase = true) }
@@ -120,7 +132,7 @@ fun EmployeeTodayWorkScreen(
     // Active lead selection
     var selectedLeadId by remember { mutableStateOf<String?>(null) }
     val activeInboxLeads = remember(myLeads) {
-        myLeads.filter { it.status == "PENDING" || it.status == "CALLBACK" || it.status == "FOLLOW_UP" || it.currentRemark.isBlank() }
+        myLeads.filter { it.currentRemark.isBlank() || it.currentRemark.equals(RemarkConstants.PENDING, ignoreCase = true) || it.status == "CALLBACK" || it.status == "FOLLOW_UP" }
     }
 
     val activeLead = remember(myLeads, selectedLeadId) {
@@ -1506,6 +1518,36 @@ private fun EmployeeInboxView(
                 letterSpacing = 1.sp,
                 modifier = Modifier.padding(top = 6.dp)
             )
+        }
+
+        if (myLeads.isEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = BrandNavySurface)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp).fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(Icons.Default.Info, contentDescription = null, tint = StatusPending, modifier = Modifier.size(36.dp))
+                        Text(
+                            text = "NO REAL DATA AVAILABLE",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = Color.White
+                        )
+                        Text(
+                            text = "No active calling leads found in your assigned Google Sheet tab.",
+                            fontSize = 12.sp,
+                            color = BrandTextSecondary,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+                }
+            }
         }
 
         items(myLeads) { lead ->

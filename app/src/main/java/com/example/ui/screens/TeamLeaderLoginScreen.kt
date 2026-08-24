@@ -63,7 +63,7 @@ fun TeamLeaderLoginScreen(
             errorMessage = null
             onLoginSuccess()
         } else {
-            errorMessage = "Invalid password. Default: TL@247"
+            errorMessage = "Incorrect Team Leader password"
         }
     }
 
@@ -189,7 +189,7 @@ fun TeamLeaderLoginScreen(
                         errorMessage = null
                     },
                     label = { Text("Team Leader Password") },
-                    placeholder = { Text("TL@247") },
+                    placeholder = { Text("••••••••") },
                     singleLine = true,
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),

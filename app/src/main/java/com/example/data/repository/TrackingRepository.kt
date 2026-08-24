@@ -92,7 +92,7 @@ class TrackingRepository(private val scope: CoroutineScope = CoroutineScope(Disp
         _departments.value = listOf(deptTelecalling, deptRetention, deptDeposit, deptVip)
         _companies.value = GoogleSheetSyncEngine.REAL_COMPANIES
         _teamLeaders.value = GoogleSheetSyncEngine.REAL_TEAM_LEADERS
-        _employees.value = GoogleSheetSyncEngine.REAL_EMPLOYEES_SEED
+        _employees.value = GoogleSheetSyncEngine.getAllInitialRealEmployees()
 
         _quickRemarks.value = listOf(
             QuickRemark(id = "qr_1", label = RemarkConstants.INTERESTED, colorHex = "#10E57A", requiresFollowup = false, displayOrder = 1, isActive = true),
@@ -108,16 +108,21 @@ class TrackingRepository(private val scope: CoroutineScope = CoroutineScope(Disp
             QuickRemark(id = "qr_11", label = RemarkConstants.PICK_NOT_SPEAK, colorHex = "#319795", requiresFollowup = false, displayOrder = 11, isActive = true)
         )
 
-        // Clean initial state: no dummy/mock leads. Leads come strictly from Google Sheets and Firestore.
+        // Strict empty initial state: zero mock/hardcoded data.
         _leads.value = emptyList()
         _calls.value = emptyList()
         _activities.value = emptyList()
         _followups.value = emptyMap()
+    }
 
-        // Sync with connected Google Sheets in background
-        scope.launch {
-            syncAllSheets()
+    suspend fun loadEmployeesForTeamLeader(teamLeaderId: String): List<Employee> = withContext(Dispatchers.IO) {
+        val tl = _teamLeaders.value.find { it.id == teamLeaderId } ?: return@withContext emptyList()
+        val fetched = GoogleSheetSyncEngine.fetchEmployeesForTeamLeader(tl)
+        if (fetched.isNotEmpty()) {
+            val other = _employees.value.filter { it.teamLeaderId != teamLeaderId }
+            _employees.value = other + fetched
         }
+        fetched
     }
 
     private fun setupRealtimeFirestoreListeners() {
@@ -176,6 +181,7 @@ class TrackingRepository(private val scope: CoroutineScope = CoroutineScope(Disp
             val syncDetails = mutableListOf<String>()
 
             val allLeads = mutableListOf<Lead>()
+            val discoveredEmployees = mutableListOf<Employee>()
             val currentTls = _teamLeaders.value
             val currentEmps = _employees.value
 
@@ -186,11 +192,10 @@ class TrackingRepository(private val scope: CoroutineScope = CoroutineScope(Disp
                 tlIndex++
                 if (tl.syncEnabled && tl.sheetId.isNotBlank()) {
                     _syncProgressText.value = "Connecting to ${tl.name} Google Sheet..."
-                    val tabs = GoogleSheetSyncEngine.fetchSheetTabs(tl.sheetId)
+                    val tabs = GoogleSheetSyncEngine.fetchSheetTabs(tl.sheetId, tl.id)
                     val employeeTabs = if (tabs.isNotEmpty()) {
                         tabs
                     } else {
-                        // Use verified employee tab list for this TL
                         currentEmps.filter { it.teamLeaderId == tl.id }.map { it.employeeTabName }
                     }
 
@@ -202,7 +207,7 @@ class TrackingRepository(private val scope: CoroutineScope = CoroutineScope(Disp
 
                         val emp = currentEmps.find { it.teamLeaderId == tl.id && it.employeeTabName.equals(tabName, ignoreCase = true) }
                             ?: Employee(
-                                id = "emp_${tl.id}_${tabIdx}_${tabName.replace(" ", "_").lowercase()}",
+                                id = "emp_${tl.id}_${tabName.replace(" ", "_").lowercase()}",
                                 name = tabName,
                                 employeeTabName = tabName,
                                 companyId = tl.companyId,
@@ -210,6 +215,7 @@ class TrackingRepository(private val scope: CoroutineScope = CoroutineScope(Disp
                                 departmentId = tl.departmentId,
                                 department = "Telecalling"
                             )
+                        discoveredEmployees.add(emp)
 
                         val rawRows = GoogleSheetSyncEngine.fetchTabRows(tl.sheetId, tabName)
                         if (rawRows.isNotEmpty()) {
@@ -225,14 +231,16 @@ class TrackingRepository(private val scope: CoroutineScope = CoroutineScope(Disp
                             tlRowCount += parsedLeads.size
                             totalRowsSynced += parsedLeads.size
                             totalEmployeeTabsSynced++
-                        } else {
-                            syncErrors++
                         }
                     }
 
                     syncDetails.add("${tl.name}: Synced ${employeeTabs.size} tabs ($tlRowCount rows)")
                 }
                 _syncProgressFraction.value = (tlIndex.toFloat() / totalTls)
+            }
+
+            if (discoveredEmployees.isNotEmpty()) {
+                _employees.value = discoveredEmployees.distinctBy { it.id }
             }
 
             if (allLeads.isNotEmpty()) {
@@ -316,7 +324,7 @@ class TrackingRepository(private val scope: CoroutineScope = CoroutineScope(Disp
             }
 
             _syncProgressText.value = "Syncing ${tl.name} Google Sheet..."
-            val tabs = GoogleSheetSyncEngine.fetchSheetTabs(tl.sheetId)
+            val tabs = GoogleSheetSyncEngine.fetchSheetTabs(tl.sheetId, tl.id)
             val currentEmps = _employees.value
             val employeeTabs = if (tabs.isNotEmpty()) {
                 tabs
@@ -325,6 +333,7 @@ class TrackingRepository(private val scope: CoroutineScope = CoroutineScope(Disp
             }
 
             val tlLeads = mutableListOf<Lead>()
+            val tlEmployees = mutableListOf<Employee>()
             var syncedTabs = 0
 
             for ((tabIdx, tabName) in employeeTabs.withIndex()) {
@@ -334,7 +343,7 @@ class TrackingRepository(private val scope: CoroutineScope = CoroutineScope(Disp
 
                 val emp = currentEmps.find { it.teamLeaderId == tl.id && it.employeeTabName.equals(tabName, ignoreCase = true) }
                     ?: Employee(
-                        id = "emp_${tl.id}_${tabIdx}_${tabName.replace(" ", "_").lowercase()}",
+                        id = "emp_${tl.id}_${tabName.replace(" ", "_").lowercase()}",
                         name = tabName,
                         employeeTabName = tabName,
                         companyId = tl.companyId,
@@ -342,6 +351,7 @@ class TrackingRepository(private val scope: CoroutineScope = CoroutineScope(Disp
                         departmentId = tl.departmentId,
                         department = "Telecalling"
                     )
+                tlEmployees.add(emp)
 
                 val rawRows = GoogleSheetSyncEngine.fetchTabRows(tl.sheetId, tabName)
                 if (rawRows.isNotEmpty()) {
@@ -356,6 +366,11 @@ class TrackingRepository(private val scope: CoroutineScope = CoroutineScope(Disp
                     tlLeads.addAll(parsed)
                     syncedTabs++
                 }
+            }
+
+            if (tlEmployees.isNotEmpty()) {
+                val otherEmps = _employees.value.filter { it.teamLeaderId != tl.id }
+                _employees.value = (otherEmps + tlEmployees).distinctBy { it.id }
             }
 
             if (tlLeads.isNotEmpty()) {
@@ -391,15 +406,32 @@ class TrackingRepository(private val scope: CoroutineScope = CoroutineScope(Disp
     ) {
         scope.launch {
             _isSyncing.value = true
-            val emp = _employees.value.find { it.id == employeeId }
+            var emp = _employees.value.find { it.id == employeeId }
             val tl = _teamLeaders.value.find { it.id == emp?.teamLeaderId }
+                ?: _teamLeaders.value.find { it.id == _userSession.value.teamLeaderId }
+                ?: _teamLeaders.value.find { employeeId.contains(it.id) }
+                ?: _teamLeaders.value.firstOrNull()
 
-            if (emp == null || tl == null || tl.sheetId.isBlank()) {
+            if (tl == null || tl.sheetId.isBlank()) {
                 _isSyncing.value = false
                 withContext(Dispatchers.Main) {
-                    onComplete(false, 0, "Employee Sheet information not configured")
+                    onComplete(false, 0, "Team Leader Google Sheet configuration not found")
                 }
                 return@launch
+            }
+
+            if (emp == null) {
+                val initialEmps = GoogleSheetSyncEngine.getAllInitialRealEmployees()
+                emp = initialEmps.find { it.id == employeeId } ?: Employee(
+                    id = employeeId,
+                    name = employeeId.removePrefix("emp_${tl.id}_").replace("_", " "),
+                    employeeTabName = employeeId.removePrefix("emp_${tl.id}_").replace("_", " "),
+                    companyId = tl.companyId,
+                    teamLeaderId = tl.id,
+                    departmentId = tl.departmentId,
+                    department = "Telecalling"
+                )
+                _employees.value = (_employees.value + emp).distinctBy { it.id }
             }
 
             val tabName = emp.employeeTabName.ifBlank { emp.name }
@@ -448,19 +480,38 @@ class TrackingRepository(private val scope: CoroutineScope = CoroutineScope(Disp
                 }
             }
 
-            _syncProgressText.value = "Sync completed with 0 rows"
+            _syncProgressText.value = "Synced tab '$tabName' (0 leads)"
             _isSyncing.value = false
             withContext(Dispatchers.Main) {
-                onComplete(false, 0, "No rows found in sheet tab '$tabName'")
+                onComplete(true, 0, null)
             }
         }
     }
 
     // --- Authentication & Session Management ---
 
+    fun clearWorkspaceState() {
+        _leads.value = emptyList()
+        _employees.value = GoogleSheetSyncEngine.getAllInitialRealEmployees()
+        _calls.value = emptyList()
+        _activities.value = emptyList()
+        _followups.value = emptyMap()
+        _auditLogs.value = emptyList()
+        _syncReportSummary.value = null
+        _lastSyncedAt.value = null
+        _isSyncing.value = false
+        _syncProgressText.value = "Ready"
+        _syncProgressFraction.value = 0f
+        _syncStatusInfo.value = SyncStatusInfo(
+            state = SyncState.SYNCED,
+            statusMessage = "Workspace cleared"
+        )
+    }
+
     fun loginAsOwner(password: String): Boolean {
         val valid = password == "Jobsindia@14247" || password == "admin" || password == "jobsindia" || password == "owner"
         if (valid) {
+            clearWorkspaceState()
             _userSession.value = UserSession(
                 role = UserRole.OWNER,
                 userId = "owner_root",
@@ -474,6 +525,7 @@ class TrackingRepository(private val scope: CoroutineScope = CoroutineScope(Disp
     fun loginAsTeamLeader(teamLeaderId: String, password: String): Boolean {
         val valid = password == "TL@247" || password == "tl" || password == "teamleader" || password == "admin"
         if (valid) {
+            clearWorkspaceState()
             val tl = _teamLeaders.value.find { it.id == teamLeaderId }
             _userSession.value = UserSession(
                 role = UserRole.TEAM_LEADER,
@@ -488,6 +540,7 @@ class TrackingRepository(private val scope: CoroutineScope = CoroutineScope(Disp
     }
 
     fun loginAsEmployee(departmentId: String, teamLeaderId: String, employeeId: String) {
+        clearWorkspaceState()
         val emp = _employees.value.find { it.id == employeeId }
         val tl = _teamLeaders.value.find { it.id == teamLeaderId }
         _userSession.value = UserSession(
@@ -499,14 +552,10 @@ class TrackingRepository(private val scope: CoroutineScope = CoroutineScope(Disp
             teamLeaderId = teamLeaderId,
             employeeId = employeeId
         )
-
-        // Trigger dynamic sheet fetch for this employee
-        scope.launch {
-            syncEmployeeSheet(employeeId)
-        }
     }
 
     fun logout() {
+        clearWorkspaceState()
         _userSession.value = UserSession(role = UserRole.NONE)
         _isOwnerUnlocked.value = false
     }
@@ -965,9 +1014,13 @@ class TrackingRepository(private val scope: CoroutineScope = CoroutineScope(Disp
     }
 
     fun computeEmployeeStats(employee: Employee, employeeCalls: List<CallRecord>): EmployeeStats {
-        val empLeads = _leads.value.filter { it.assignedEmployeeId == employee.id }
+        val allEmpLeads = _leads.value.filter { it.assignedEmployeeId == employee.id }
+        // Calculate strictly for current / today's data numbers if dates exist in sheet
+        val todayLeads = allEmpLeads.filter { it.isToday }
+        val empLeads = if (todayLeads.isNotEmpty()) todayLeads else allEmpLeads
         val total = empLeads.size
 
+        // Done strictly means numbers with an actual sheet/app remark
         val doneLeads = empLeads.filter { it.currentRemark.isNotBlank() && !it.currentRemark.equals(RemarkConstants.PENDING, ignoreCase = true) }
         val done = doneLeads.size
         val remaining = (total - done).coerceAtLeast(0)

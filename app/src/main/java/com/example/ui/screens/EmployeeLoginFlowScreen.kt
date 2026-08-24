@@ -38,6 +38,8 @@ fun EmployeeLoginFlowScreen(
     var selectedTlId by remember { mutableStateOf<String?>(null) }
     var selectedEmpId by remember { mutableStateOf<String?>(null) }
 
+    var isEnteringAndSyncing by remember { mutableStateOf(false) }
+
     val filteredTls = remember(selectedCompanyId, teamLeaders) {
         if (selectedCompanyId == null) emptyList()
         else teamLeaders.filter { it.companyId == selectedCompanyId }
@@ -46,6 +48,12 @@ fun EmployeeLoginFlowScreen(
     val filteredEmployees = remember(selectedTlId, employees) {
         if (selectedTlId == null) emptyList()
         else employees.filter { it.teamLeaderId == selectedTlId }
+    }
+
+    LaunchedEffect(selectedTlId) {
+        if (selectedTlId != null) {
+            viewModel.fetchEmployeesForTl(selectedTlId!!)
+        }
     }
 
     Scaffold(
@@ -139,7 +147,7 @@ fun EmployeeLoginFlowScreen(
                                     val count = employees.count { it.teamLeaderId == tl.id }
                                     SelectableRow(
                                         title = tl.name,
-                                        subtitle = "Synced Google Sheet • $count Active Telecaller Tabs",
+                                        subtitle = if (count > 0) "Connected Google Sheet • $count Telecaller Tabs" else "Connected Google Sheet • Tap to load telecaller tabs",
                                         isSelected = isSelected,
                                         onClick = {
                                             selectedTlId = tl.id
@@ -199,13 +207,16 @@ fun EmployeeLoginFlowScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             // ENTER TODAY'S WORK BUTTON
-            val canProceed = selectedCompanyId != null && selectedTlId != null && selectedEmpId != null
+            val canProceed = selectedCompanyId != null && selectedTlId != null && selectedEmpId != null && !isEnteringAndSyncing
             Button(
                 onClick = {
                     if (canProceed) {
+                        isEnteringAndSyncing = true
                         val deptId = teamLeaders.find { it.id == selectedTlId }?.departmentId ?: "dept_telecalling"
-                        viewModel.loginEmployee(deptId, selectedTlId!!, selectedEmpId!!)
-                        onLoginSuccess()
+                        viewModel.loginAndSyncEmployee(deptId, selectedTlId!!, selectedEmpId!!) {
+                            isEnteringAndSyncing = false
+                            onLoginSuccess()
+                        }
                     }
                 },
                 enabled = canProceed,
@@ -220,13 +231,27 @@ fun EmployeeLoginFlowScreen(
                     disabledContentColor = Color(0x55FFFFFF)
                 )
             ) {
-                Icon(Icons.Default.FlashOn, contentDescription = null, modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "ENTER TODAY'S WORK INBOX",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
+                if (isEnteringAndSyncing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = Color(0xFF071120),
+                        strokeWidth = 2.5.dp
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "SYNCING GOOGLE SHEET & ENTERING...",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
+                    )
+                } else {
+                    Icon(Icons.Default.FlashOn, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "SYNC & ENTER TODAY'S WORK INBOX",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                }
             }
         }
     }

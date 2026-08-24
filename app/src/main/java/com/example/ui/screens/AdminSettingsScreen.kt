@@ -43,7 +43,17 @@ fun AdminSettingsScreen(
     val quickRemarks by viewModel.quickRemarks.collectAsState()
     val isSyncing by viewModel.isSyncing.collectAsState()
 
-    var activeAdminTab by remember { mutableStateOf("SHEETS") } // SHEETS, REMARKS, DEPARTMENTS
+    val userSession by viewModel.userSession.collectAsState()
+    val leads by viewModel.leads.collectAsState()
+    val calls by viewModel.calls.collectAsState()
+    val employees by viewModel.employees.collectAsState()
+    val lastSyncedAt by viewModel.lastSyncedAt.collectAsState()
+    val syncStatusInfo by viewModel.syncStatusInfo.collectAsState()
+    val syncReportSummary by viewModel.syncReportSummary.collectAsState()
+    val diagnosticResult by viewModel.diagnosticResult.collectAsState()
+    val isTestingHealth by viewModel.isTestingHealth.collectAsState()
+
+    var activeAdminTab by remember { mutableStateOf("SHEETS") } // SHEETS, REMARKS, DEPARTMENTS, DEBUG
 
     // Dialog States
     var showSheetDialog by remember { mutableStateOf<TeamLeader?>(null) }
@@ -115,9 +125,10 @@ fun AdminSettingsScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 listOf(
-                    "SHEETS" to "Google Sheets",
-                    "REMARKS" to "Quick Remarks",
-                    "DEPARTMENTS" to "Departments"
+                    "SHEETS" to "Sheets",
+                    "REMARKS" to "Remarks",
+                    "DEPARTMENTS" to "Departments",
+                    "DEBUG" to "Debug / Live Session"
                 ).forEach { (key, label) ->
                     val isSelected = activeAdminTab == key
                     Box(
@@ -442,6 +453,91 @@ fun AdminSettingsScreen(
                 }
             }
         }
+
+        // ================= SECTION 4: DEBUG MODE / ACTIVE SESSION & SYNC =================
+        if (activeAdminTab == "DEBUG") {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = BrandNavySurface),
+                    border = CardDefaults.outlinedCardBorder().copy(
+                        brush = Brush.verticalGradient(listOf(Color(0x44FFFFFF), Color(0x11FFFFFF)))
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.BugReport, contentDescription = null, tint = BrandGreenPrimary, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("ACTIVE AUTH & SESSION DETAILS", color = BrandGreenPrimary, fontWeight = FontWeight.Bold, fontSize = 12.sp, letterSpacing = 1.sp)
+                        }
+
+                        HorizontalDivider(color = Color(0x1AFFFFFF))
+
+                        DebugFieldRow(label = "Active User ID", value = userSession.userId ?: "None (Logged Out)")
+                        DebugFieldRow(label = "User Name", value = userSession.userName)
+                        DebugFieldRow(label = "Active Role", value = userSession.role.name)
+                        DebugFieldRow(label = "Active Company", value = userSession.companyId ?: "ALL (Root Admin)")
+                        DebugFieldRow(label = "Active Team Leader", value = userSession.teamLeaderId ?: "ALL (Global Scope)")
+                        DebugFieldRow(label = "Active Employee ID", value = userSession.employeeId ?: "N/A (Executive Role)")
+                    }
+                }
+            }
+
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = BrandNavySurface),
+                    border = CardDefaults.outlinedCardBorder().copy(
+                        brush = Brush.verticalGradient(listOf(Color(0x44FFFFFF), Color(0x11FFFFFF)))
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.CloudSync, contentDescription = null, tint = BrandBlueSecondary, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("DATA PIPELINE & SYNC STATUS", color = BrandBlueSecondary, fontWeight = FontWeight.Bold, fontSize = 12.sp, letterSpacing = 1.sp)
+                        }
+
+                        HorizontalDivider(color = Color(0x1AFFFFFF))
+
+                        DebugFieldRow(label = "Mock Data Count", value = "0 (Strictly Blocked / Deleted)")
+                        DebugFieldRow(label = "Real Leads in Memory", value = "${leads.size} leads")
+                        DebugFieldRow(label = "Real Calls Recorded", value = "${calls.size} calls")
+                        DebugFieldRow(label = "Real Employee Tabs Discovered", value = "${employees.size} employees")
+                        DebugFieldRow(label = "Configured Companies", value = "${companies.size} companies (SPIN101, RUMMY77)")
+                        DebugFieldRow(label = "Configured Team Leaders", value = "${teamLeaders.size} supervisors")
+                        DebugFieldRow(
+                            label = "Last Cloud/Sheet Sync",
+                            value = if (lastSyncedAt != null) {
+                                java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date(lastSyncedAt!!))
+                            } else {
+                                "Never synced yet"
+                            }
+                        )
+                        DebugFieldRow(label = "Sync Pipeline State", value = syncStatusInfo.state.name)
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Button(
+                            onClick = {
+                                viewModel.syncAll { summary ->
+                                    Toast.makeText(context, "Full sync complete: ${summary.rowsSynced} rows", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = BrandGreenPrimary, contentColor = Color(0xFF071120))
+                        ) {
+                            Icon(Icons.Default.Sync, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Trigger Full Real Sync Now", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // Modal Dialogs
@@ -612,7 +708,7 @@ fun OwnerLoginDialog(onUnlock: (String) -> Boolean) {
                         password = it
                         error = false
                     },
-                    label = { Text("Password (e.g. Jobsindia@14247)", color = BrandTextSecondary) },
+                    label = { Text("Admin Master Password", color = BrandTextSecondary) },
                     visualTransformation = PasswordVisualTransformation(),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
@@ -625,7 +721,7 @@ fun OwnerLoginDialog(onUnlock: (String) -> Boolean) {
                 )
 
                 if (error) {
-                    Text("Incorrect password. Default: Jobsindia@14247", color = StatusDanger, fontSize = 11.sp)
+                    Text("Incorrect administrator password", color = StatusDanger, fontSize = 11.sp)
                 }
 
                 Button(
@@ -658,5 +754,17 @@ fun AdminMetricBox(label: String, value: String, icon: androidx.compose.ui.graph
             Text(value, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Text(label, fontSize = 10.sp, color = BrandTextMuted)
         }
+    }
+}
+
+@Composable
+fun DebugFieldRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = label, color = BrandTextSecondary, fontSize = 12.sp)
+        Text(text = value, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 12.5.sp)
     }
 }

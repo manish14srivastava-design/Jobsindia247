@@ -22,6 +22,20 @@ object FirebaseSyncEngine {
     private val _healthStatus = MutableStateFlow(FirebaseHealthStatus())
     val healthStatus: StateFlow<FirebaseHealthStatus> = _healthStatus.asStateFlow()
 
+    private val _recordsWritten = MutableStateFlow(0)
+    val recordsWritten: StateFlow<Int> = _recordsWritten.asStateFlow()
+
+    private val _recordsUpdated = MutableStateFlow(0)
+    val recordsUpdated: StateFlow<Int> = _recordsUpdated.asStateFlow()
+
+    private val _recordsLoaded = MutableStateFlow(0)
+    val recordsLoaded: StateFlow<Int> = _recordsLoaded.asStateFlow()
+
+    private val _firestoreErrors = MutableStateFlow(0)
+    val firestoreErrors: StateFlow<Int> = _firestoreErrors.asStateFlow()
+
+    val mockRecordsLoaded: StateFlow<Int> = MutableStateFlow(0).asStateFlow() // Strictly 0 at all times
+
     private val firestore: FirebaseFirestore? by lazy {
         try {
             val db = FirebaseFirestore.getInstance()
@@ -456,7 +470,11 @@ object FirebaseSyncEngine {
         }
     }
 
-    private fun recordWriteSuccess() {
+    fun recordWriteSuccess(isUpdate: Boolean = false) {
+        _recordsWritten.value = _recordsWritten.value + 1
+        if (isUpdate) {
+            _recordsUpdated.value = _recordsUpdated.value + 1
+        }
         _healthStatus.value = _healthStatus.value.copy(
             lastSuccessfulWrite = System.currentTimeMillis(),
             firestoreWorking = true,
@@ -464,7 +482,8 @@ object FirebaseSyncEngine {
         )
     }
 
-    private fun recordReadSuccess() {
+    fun recordReadSuccess(count: Int = 1) {
+        _recordsLoaded.value = _recordsLoaded.value + count
         _healthStatus.value = _healthStatus.value.copy(
             lastSuccessfulRead = System.currentTimeMillis(),
             firestoreWorking = true,
@@ -472,7 +491,8 @@ object FirebaseSyncEngine {
         )
     }
 
-    private fun recordWriteFailure() {
+    fun recordWriteFailure() {
+        _firestoreErrors.value = _firestoreErrors.value + 1
         _healthStatus.value = _healthStatus.value.copy(
             failedWrites = _healthStatus.value.failedWrites + 1
         )
@@ -484,86 +504,98 @@ object FirebaseSyncEngine {
         onLeadsUpdate: (List<Lead>) -> Unit,
         onActivitiesUpdate: (List<ActivityRecord>) -> Unit
     ): Pair<ListenerRegistration?, ListenerRegistration?> {
-        val db = firestore ?: return Pair(null, null)
+        val db = try { firestore } catch (t: Throwable) { null } ?: return Pair(null, null)
         var leadsListener: ListenerRegistration? = null
         var activitiesListener: ListenerRegistration? = null
 
         try {
-            leadsListener = db.collection("leads").addSnapshotListener { snapshot, e ->
-                if (e != null || snapshot == null) {
-                    if (e != null) {
-                        _healthStatus.value = _healthStatus.value.copy(realtimeListenerWorking = false)
-                    }
-                    return@addSnapshotListener
-                }
-                _healthStatus.value = _healthStatus.value.copy(
-                    realtimeListenerWorking = true,
-                    lastSuccessfulRead = System.currentTimeMillis()
-                )
-                val list = snapshot.documents.mapNotNull { doc ->
+            leadsListener = db.collection("leads")
+                .limit(500)
+                .addSnapshotListener { snapshot, e ->
                     try {
-                        Lead(
-                            id = doc.getString("id") ?: doc.id,
-                            customerName = doc.getString("customerName") ?: "",
-                            phone = doc.getString("phone") ?: "",
-                            companyId = doc.getString("companyId") ?: "",
-                            departmentId = doc.getString("departmentId") ?: "dept_telecalling",
-                            teamLeaderId = doc.getString("teamLeaderId") ?: "",
-                            assignedEmployeeId = doc.getString("assignedEmployeeId") ?: "",
-                            sheetId = doc.getString("sheetId") ?: "",
-                            sheetTabName = doc.getString("sheetTabName") ?: "",
-                            sourceRowIndex = (doc.getLong("sourceRowIndex") ?: 1L).toInt(),
-                            status = doc.getString("status") ?: "PENDING",
-                            priority = try { LeadPriority.valueOf(doc.getString("priority") ?: "NORMAL") } catch (_: Exception) { LeadPriority.NORMAL },
-                            currentRemark = doc.getString("currentRemark") ?: "",
-                            previousRemark = doc.getString("previousRemark"),
-                            nextFollowupAt = doc.getLong("nextFollowupAt"),
-                            notes = doc.getString("notes"),
-                            callCount = (doc.getLong("callCount") ?: 0L).toInt(),
-                            lastCalledAt = doc.getLong("lastCalledAt"),
-                            linkSent = doc.getBoolean("linkSent") ?: false,
-                            linkSentAt = doc.getLong("linkSentAt"),
-                            messageTemplateId = doc.getString("messageTemplateId"),
-                            dateStr = doc.getString("dateStr") ?: "",
-                            isToday = doc.getBoolean("isToday") ?: true,
-                            updatedAt = doc.getLong("updatedAt") ?: System.currentTimeMillis()
+                        if (e != null || snapshot == null) {
+                            if (e != null) {
+                                _healthStatus.value = _healthStatus.value.copy(realtimeListenerWorking = false)
+                            }
+                            return@addSnapshotListener
+                        }
+                        _healthStatus.value = _healthStatus.value.copy(
+                            realtimeListenerWorking = true,
+                            lastSuccessfulRead = System.currentTimeMillis()
                         )
-                    } catch (_: Exception) {
-                        null
+                        val list = snapshot.documents.mapNotNull { doc ->
+                            try {
+                                Lead(
+                                    id = doc.getString("id") ?: doc.id,
+                                    customerName = doc.getString("customerName") ?: "",
+                                    phone = doc.getString("phone") ?: "",
+                                    companyId = doc.getString("companyId") ?: "",
+                                    departmentId = doc.getString("departmentId") ?: "dept_telecalling",
+                                    teamLeaderId = doc.getString("teamLeaderId") ?: "",
+                                    assignedEmployeeId = doc.getString("assignedEmployeeId") ?: "",
+                                    sheetId = doc.getString("sheetId") ?: "",
+                                    sheetTabName = doc.getString("sheetTabName") ?: "",
+                                    sourceRowIndex = (doc.getLong("sourceRowIndex") ?: 1L).toInt(),
+                                    status = doc.getString("status") ?: "PENDING",
+                                    priority = try { LeadPriority.valueOf(doc.getString("priority") ?: "NORMAL") } catch (_: Exception) { LeadPriority.NORMAL },
+                                    currentRemark = doc.getString("currentRemark") ?: "",
+                                    previousRemark = doc.getString("previousRemark"),
+                                    nextFollowupAt = doc.getLong("nextFollowupAt"),
+                                    notes = doc.getString("notes"),
+                                    callCount = (doc.getLong("callCount") ?: 0L).toInt(),
+                                    lastCalledAt = doc.getLong("lastCalledAt"),
+                                    linkSent = doc.getBoolean("linkSent") ?: false,
+                                    linkSentAt = doc.getLong("linkSentAt"),
+                                    messageTemplateId = doc.getString("messageTemplateId"),
+                                    dateStr = doc.getString("dateStr") ?: "",
+                                    isToday = doc.getBoolean("isToday") ?: true,
+                                    updatedAt = doc.getLong("updatedAt") ?: System.currentTimeMillis()
+                                )
+                            } catch (_: Throwable) {
+                                null
+                            }
+                        }
+                        if (list.isNotEmpty()) {
+                            onLeadsUpdate(list)
+                        }
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "Error processing leads snapshot: ${t.message}")
                     }
                 }
-                if (list.isNotEmpty()) {
-                    onLeadsUpdate(list)
-                }
-            }
 
-            activitiesListener = db.collection("activity_records").addSnapshotListener { snapshot, e ->
-                if (e != null || snapshot == null) return@addSnapshotListener
-                val list = snapshot.documents.mapNotNull { doc ->
+            activitiesListener = db.collection("activity_records")
+                .limit(200)
+                .addSnapshotListener { snapshot, e ->
                     try {
-                        ActivityRecord(
-                            id = doc.getString("id") ?: doc.id,
-                            employeeId = doc.getString("employeeId") ?: "",
-                            employeeName = doc.getString("employeeName") ?: "",
-                            leadId = doc.getString("leadId") ?: "",
-                            phone = doc.getString("phone") ?: "",
-                            remark = doc.getString("remark") ?: "",
-                            note = doc.getString("note"),
-                            followUpAt = doc.getLong("followUpAt"),
-                            linkSent = doc.getBoolean("linkSent") ?: false,
-                            departmentId = doc.getString("departmentId") ?: "",
-                            teamLeaderId = doc.getString("teamLeaderId") ?: "",
-                            timestamp = doc.getLong("timestamp") ?: System.currentTimeMillis()
-                        )
-                    } catch (_: Exception) {
-                        null
+                        if (e != null || snapshot == null) return@addSnapshotListener
+                        val list = snapshot.documents.mapNotNull { doc ->
+                            try {
+                                ActivityRecord(
+                                    id = doc.getString("id") ?: doc.id,
+                                    employeeId = doc.getString("employeeId") ?: "",
+                                    employeeName = doc.getString("employeeName") ?: "",
+                                    leadId = doc.getString("leadId") ?: "",
+                                    phone = doc.getString("phone") ?: "",
+                                    remark = doc.getString("remark") ?: "",
+                                    note = doc.getString("note"),
+                                    followUpAt = doc.getLong("followUpAt"),
+                                    linkSent = doc.getBoolean("linkSent") ?: false,
+                                    departmentId = doc.getString("departmentId") ?: "",
+                                    teamLeaderId = doc.getString("teamLeaderId") ?: "",
+                                    timestamp = doc.getLong("timestamp") ?: System.currentTimeMillis()
+                                )
+                            } catch (_: Throwable) {
+                                null
+                            }
+                        }
+                        if (list.isNotEmpty()) {
+                            onActivitiesUpdate(list)
+                        }
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "Error processing activities snapshot: ${t.message}")
                     }
                 }
-                if (list.isNotEmpty()) {
-                    onActivitiesUpdate(list)
-                }
-            }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Log.w(TAG, "Failed setting up real-time Firestore listeners: ${e.message}")
         }
 

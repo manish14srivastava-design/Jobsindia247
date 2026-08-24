@@ -626,8 +626,23 @@ fun DashboardScreen(
                     colors = CardDefaults.cardColors(containerColor = BrandNavySurface),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Box(modifier = Modifier.padding(24.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text("No telecallers match the current filters.", color = BrandTextMuted, fontSize = 13.sp)
+                    Column(
+                        modifier = Modifier.padding(24.dp).fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(Icons.Default.Info, contentDescription = null, tint = StatusPending, modifier = Modifier.size(32.dp))
+                        Text("NO REAL DATA AVAILABLE", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                        Text("No active live records found. Google Sheet sync may be in progress or empty.", color = BrandTextMuted, fontSize = 12.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        Button(
+                            onClick = { viewModel.syncAll() },
+                            colors = ButtonDefaults.buttonColors(containerColor = BrandGreenPrimary, contentColor = Color(0xFF071120)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Resync Google Sheets", fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }

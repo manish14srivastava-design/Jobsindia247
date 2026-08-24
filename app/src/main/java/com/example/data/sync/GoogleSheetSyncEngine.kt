@@ -129,103 +129,133 @@ object GoogleSheetSyncEngine {
         )
     )
 
-    // Seed of real employees extracted directly from the 6 Google Sheet tabs
-    val REAL_EMPLOYEES_SEED = listOf(
-        // Team Cherry (8)
-        Employee("emp_cherry_mahi", "Mahi singh", "Mahi singh", "comp_ind08", "tl_cherry", "dept_telecalling", "Telecalling"),
-        Employee("emp_cherry_puja", "PUJA", "PUJA", "comp_ind08", "tl_cherry", "dept_telecalling", "Telecalling"),
-        Employee("emp_cherry_rameez", "rameez zaheer", "rameez zaheer", "comp_ind08", "tl_cherry", "dept_telecalling", "Telecalling"),
-        Employee("emp_cherry_aja", "AJA", "AJA", "comp_ind08", "tl_cherry", "dept_telecalling", "Telecalling"),
-        Employee("emp_cherry_mohseen", "mohd mohseen saha", "mohd mohseen saha", "comp_ind08", "tl_cherry", "dept_telecalling", "Telecalling"),
-        Employee("emp_cherry_ajay", "Ajay", "Ajay", "comp_ind08", "tl_cherry", "dept_telecalling", "Telecalling"),
-        Employee("emp_cherry_sufiyan", "Sufiyan", "Sufiyan", "comp_ind08", "tl_cherry", "dept_telecalling", "Telecalling"),
-        Employee("emp_cherry_priyanka", "Priyanka", "Priyanka", "comp_ind08", "tl_cherry", "dept_telecalling", "Telecalling"),
-
-        // Team Musa (6)
-        Employee("emp_musa_purnima", "Purnima", "Purnima", "comp_ind08", "tl_musa", "dept_telecalling", "Telecalling"),
-        Employee("emp_musa_anjarul", "Mohd Anjarul", "Mohd Anjarul", "comp_ind08", "tl_musa", "dept_telecalling", "Telecalling"),
-        Employee("emp_musa_salam", "Abdul salam", "Abdul salam", "comp_ind08", "tl_musa", "dept_telecalling", "Telecalling"),
-        Employee("emp_musa_sreelekha", "Sreelekha", "Sreelekha", "comp_ind08", "tl_musa", "dept_telecalling", "Telecalling"),
-        Employee("emp_musa_rajani", "rajani", "rajani", "comp_ind08", "tl_musa", "dept_telecalling", "Telecalling"),
-        Employee("emp_musa_khan", "Khan", "Khan", "comp_ind08", "tl_musa", "dept_telecalling", "Telecalling"),
-
-        // Team Zenni (6)
-        Employee("emp_zenni_sangeeta", "Sangeeta Madhi", "Sangeeta Madhi", "comp_ind08", "tl_zenni", "dept_telecalling", "Telecalling"),
-        Employee("emp_zenni_kashif", "Kashif", "Kashif", "comp_ind08", "tl_zenni", "dept_telecalling", "Telecalling"),
-        Employee("emp_zenni_toukeer", "Toukeer", "Toukeer", "comp_ind08", "tl_zenni", "dept_telecalling", "Telecalling"),
-        Employee("emp_zenni_saif", "M. Saif", "M. Saif", "comp_ind08", "tl_zenni", "dept_telecalling", "Telecalling"),
-        Employee("emp_zenni_joyeb", "Mohd Joyeb", "Mohd Joyeb", "comp_ind08", "tl_zenni", "dept_telecalling", "Telecalling"),
-        Employee("emp_zenni_anna", "anna", "anna", "comp_ind08", "tl_zenni", "dept_telecalling", "Telecalling"),
-
-        // Team Jennifer (13)
-        Employee("emp_jenn_shereen", "SHEREEN", "SHEREEN", "comp_ind15", "tl_jennifer", "dept_telecalling", "Telecalling"),
-        Employee("emp_jenn_soni", "SONI", "SONI", "comp_ind15", "tl_jennifer", "dept_telecalling", "Telecalling"),
-        Employee("emp_jenn_ritu", "RITU", "RITU", "comp_ind15", "tl_jennifer", "dept_telecalling", "Telecalling"),
-        Employee("emp_jenn_payal", "PAYAL", "PAYAL", "comp_ind15", "tl_jennifer", "dept_telecalling", "Telecalling"),
-        Employee("emp_jenn_siddarth", "SIDDARTH", "SIDDARTH", "comp_ind15", "tl_jennifer", "dept_telecalling", "Telecalling"),
-        Employee("emp_jenn_payal2", "PAYAL 2", "PAYAL 2", "comp_ind15", "tl_jennifer", "dept_telecalling", "Telecalling"),
-        Employee("emp_jenn_soni2", "soni 2", "soni 2", "comp_ind15", "tl_jennifer", "dept_telecalling", "Telecalling"),
-        Employee("emp_jenn_ritu2", "ritu 2", "ritu 2", "comp_ind15", "tl_jennifer", "dept_telecalling", "Telecalling"),
-        Employee("emp_jenn_dolly", "Dolly", "Dolly", "comp_ind15", "tl_jennifer", "dept_telecalling", "Telecalling"),
-        Employee("emp_jenn_sidhant", "sidhant kar", "sidhant kar", "comp_ind15", "tl_jennifer", "dept_telecalling", "Telecalling"),
-        Employee("emp_jenn_sneha", "Sneha", "Sneha", "comp_ind15", "tl_jennifer", "dept_telecalling", "Telecalling"),
-        Employee("emp_jenn_anshika", "ANSHIKA", "ANSHIKA", "comp_ind15", "tl_jennifer", "dept_telecalling", "Telecalling"),
-        Employee("emp_jenn_tanvi", "TANVI", "TANVI", "comp_ind15", "tl_jennifer", "dept_telecalling", "Telecalling"),
-
-        // Team Venom (5)
-        Employee("emp_venom_priyanka", "priyanka", "priyanka", "comp_ind15", "tl_venom", "dept_telecalling", "Telecalling"),
-        Employee("emp_venom_sufiyan", "sufiyan", "sufiyan", "comp_ind15", "tl_venom", "dept_telecalling", "Telecalling"),
-        Employee("emp_venom_payel", "Payel", "Payel", "comp_ind15", "tl_venom", "dept_telecalling", "Telecalling"),
-        Employee("emp_venom_ranjit", "Ranjit", "Ranjit", "comp_ind15", "tl_venom", "dept_telecalling", "Telecalling"),
-        Employee("emp_venom_vishakha", "Vishakha bagari", "Vishakha bagari", "comp_ind15", "tl_venom", "dept_telecalling", "Telecalling"),
-
-        // Team Manish (6)
-        Employee("emp_manish_ankit", "Ankit", "Ankit", "comp_ind15", "tl_manish", "dept_telecalling", "Telecalling"),
-        Employee("emp_manish_ram", "RAM MISHRA", "RAM MISHRA", "comp_ind15", "tl_manish", "dept_telecalling", "Telecalling"),
-        Employee("emp_manish_amit", "Amit", "Amit", "comp_ind15", "tl_manish", "dept_telecalling", "Telecalling"),
-        Employee("emp_manish_sheroj", "sheroj", "sheroj", "comp_ind15", "tl_manish", "dept_telecalling", "Telecalling"),
-        Employee("emp_manish_sanjay", "Sanjay", "Sanjay", "comp_ind15", "tl_manish", "dept_telecalling", "Telecalling"),
-        Employee("emp_manish_rnjit", "Rnjit", "Rnjit", "comp_ind15", "tl_manish", "dept_telecalling", "Telecalling")
+    // Verified real employee tab names mapped per Team Leader Google Sheet
+    val KNOWN_REAL_TABS_BY_TL_ID = mapOf(
+        "tl_cherry" to listOf("Mahi singh", "PUJA", "rameez zaheer", "AJA", "mohd mohseen saha", "Ajay", "Sufiyan", "Priyanka"),
+        "tl_musa" to listOf("Purnima", "Mohd Anjarul", "Abdul salam", "Sreelekha", "rajani", "Khan", "Tanusri Mukherjee"),
+        "tl_zenni" to listOf("Sangeeta Madhi", "Kashif", "Toukeer", "M. Saif", "Mohd Joyeb", "anna"),
+        "tl_jennifer" to listOf("SHEREEN", "SONI", "RITU", "PAYAL", "SIDDARTH", "PAYAL 2", "soni 2", "ritu 2", "Dolly", "sidhant kar", "Sneha", "ANSHIKA", "TANVI"),
+        "tl_venom" to listOf("priyanka", "sufiyan", "Payel", "Ranjit", "Vishakha bagari"),
+        "tl_manish" to listOf("Ankit", "RAM MISHRA", "Amit", "sheroj", "Sanjay", "Rnjit ", "Payel")
     )
 
-    suspend fun fetchSheetTabs(sheetId: String): List<String> = withContext(Dispatchers.IO) {
+    fun getAllInitialRealEmployees(): List<Employee> {
+        val list = mutableListOf<Employee>()
+        REAL_TEAM_LEADERS.forEach { tl ->
+            val tabs = KNOWN_REAL_TABS_BY_TL_ID[tl.id] ?: emptyList()
+            tabs.forEach { tabName ->
+                list.add(
+                    Employee(
+                        id = "emp_${tl.id}_${tabName.trim().replace(" ", "_").lowercase()}",
+                        name = tabName.trim(),
+                        employeeTabName = tabName.trim(),
+                        companyId = tl.companyId,
+                        teamLeaderId = tl.id,
+                        departmentId = tl.departmentId,
+                        department = "Telecalling"
+                    )
+                )
+            }
+        }
+        return list
+    }
+
+    // Dynamic tab & employee loader from connected Team Leader Google Sheets
+    suspend fun fetchEmployeesForTeamLeader(tl: TeamLeader): List<Employee> = withContext(Dispatchers.IO) {
+        val tabs = fetchSheetTabs(tl.sheetId, tl.id)
+        val validTabs = if (tabs.isNotEmpty()) tabs else (KNOWN_REAL_TABS_BY_TL_ID[tl.id] ?: emptyList())
+        validTabs.map { tabName ->
+            Employee(
+                id = "emp_${tl.id}_${tabName.trim().replace(" ", "_").lowercase()}",
+                name = tabName.trim(),
+                employeeTabName = tabName.trim(),
+                companyId = tl.companyId,
+                teamLeaderId = tl.id,
+                departmentId = tl.departmentId,
+                department = "Telecalling"
+            )
+        }
+    }
+
+    suspend fun fetchSheetTabs(sheetId: String, tlId: String? = null): List<String> = withContext(Dispatchers.IO) {
         try {
             val url = "https://docs.google.com/spreadsheets/d/$sheetId/edit"
             val request = Request.Builder()
                 .url(url)
-                .header("User-Agent", "Mozilla/5.0 (Android; Mobile; rv:109.0)")
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                 .build()
 
             val response = client.newCall(request).execute()
-            if (!response.isSuccessful) return@withContext emptyList()
+            if (!response.isSuccessful) {
+                return@withContext if (tlId != null) KNOWN_REAL_TABS_BY_TL_ID[tlId] ?: emptyList() else emptyList()
+            }
 
-            val html = response.body?.string() ?: return@withContext emptyList()
-            val pattern = Pattern.compile("docs-sheet-tab-caption\">([^<]+)</div>")
-            val matcher = pattern.matcher(html)
+            val html = response.body?.string() ?: return@withContext if (tlId != null) KNOWN_REAL_TABS_BY_TL_ID[tlId] ?: emptyList() else emptyList()
             val tabs = mutableListOf<String>()
 
-            while (matcher.find()) {
-                val tab = matcher.group(1)?.trim() ?: ""
-                if (tab.isNotBlank() &&
-                    !tab.startsWith("sample", ignoreCase = true) &&
-                    !tab.startsWith("report", ignoreCase = true)
-                ) {
+            // Pattern 1: Array pattern in Google Sheet bootstrap data
+            val arrayPattern = Pattern.compile("\\[\"([^\"]+)\",\\d+,\\d+,\\d+,\\d+,\\d+,\\d+,\\d+,\\d+\\]")
+            val arrayMatcher = arrayPattern.matcher(html)
+            while (arrayMatcher.find()) {
+                val tab = arrayMatcher.group(1)?.trim() ?: ""
+                if (isValidTabName(tab)) {
                     tabs.add(tab)
                 }
             }
-            tabs.distinct()
+
+            // Pattern 2: JSON name property pattern
+            if (tabs.isEmpty()) {
+                val jsonPattern = Pattern.compile("\"name\":\"([^\"]+)\",\"sheetId\"")
+                val jsonMatcher = jsonPattern.matcher(html)
+                while (jsonMatcher.find()) {
+                    val tab = jsonMatcher.group(1)?.trim() ?: ""
+                    if (isValidTabName(tab)) {
+                        tabs.add(tab)
+                    }
+                }
+            }
+
+            // Pattern 3: Legacy HTML Caption pattern
+            if (tabs.isEmpty()) {
+                val legacyPattern = Pattern.compile("docs-sheet-tab-caption\">([^<]+)</div>")
+                val legacyMatcher = legacyPattern.matcher(html)
+                while (legacyMatcher.find()) {
+                    val tab = legacyMatcher.group(1)?.trim() ?: ""
+                    if (isValidTabName(tab)) {
+                        tabs.add(tab)
+                    }
+                }
+            }
+
+            val distinctTabs = tabs.distinct()
+            if (distinctTabs.isNotEmpty()) {
+                distinctTabs
+            } else if (tlId != null) {
+                KNOWN_REAL_TABS_BY_TL_ID[tlId] ?: emptyList()
+            } else {
+                emptyList()
+            }
         } catch (e: Exception) {
-            emptyList()
+            if (tlId != null) KNOWN_REAL_TABS_BY_TL_ID[tlId] ?: emptyList() else emptyList()
         }
+    }
+
+    private fun isValidTabName(tab: String): Boolean {
+        if (tab.isBlank() || tab.length > 50) return false
+        val lower = tab.lowercase()
+        return !lower.startsWith("sample") &&
+                !lower.startsWith("report") &&
+                !lower.startsWith("summary") &&
+                !lower.contains("template")
     }
 
     suspend fun fetchTabRows(sheetId: String, tabName: String): List<List<String>> = withContext(Dispatchers.IO) {
         try {
-            val encodedTab = URLEncoder.encode(tabName, "UTF-8")
+            val encodedTab = URLEncoder.encode(tabName.trim(), "UTF-8")
             val url = "https://docs.google.com/spreadsheets/d/$sheetId/gviz/tq?tqx=out:csv&sheet=$encodedTab"
             val request = Request.Builder()
                 .url(url)
-                .header("User-Agent", "Mozilla/5.0 (Android; Mobile; rv:109.0)")
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                 .build()
 
             val response = client.newCall(request).execute()
@@ -380,9 +410,55 @@ object GoogleSheetSyncEngine {
             }
         }
 
+        // Header detection
+        var headerRowIndex = -1
+        var phoneCol = -1
+        var remarkCol = -1
+        var dateCol = -1
+        var nameCol = -1
+        var notesCol = -1
+
+        for (rIdx in 0 until minOf(5, rawRows.size)) {
+            val r = rawRows[rIdx]
+            var hasPhoneHeader = false
+            var hasRemarkHeader = false
+
+            for (cIdx in r.indices) {
+                val header = r[cIdx].trim().lowercase()
+                if (header.contains("phone") || header.contains("mobile") || header.contains("contact") ||
+                    header == "number" || header == "numbers" || header == "no." || header == "no"
+                ) {
+                    phoneCol = cIdx
+                    hasPhoneHeader = true
+                }
+                if (header.contains("remark") || header.contains("status") || header.contains("feedback") ||
+                    header.contains("disposition") || header == "result" || header.contains("calling")
+                ) {
+                    remarkCol = cIdx
+                    hasRemarkHeader = true
+                }
+                if (header.contains("date") || header == "dt" || header == "day") {
+                    dateCol = cIdx
+                }
+                if (header.contains("name") || header.contains("customer") || header.contains("client")) {
+                    nameCol = cIdx
+                }
+                if (header.contains("note") || header.contains("comment") || header.contains("sub remark")) {
+                    notesCol = cIdx
+                }
+            }
+
+            if (hasPhoneHeader || hasRemarkHeader || r.any { it.trim().equals("s.no", ignoreCase = true) || it.trim().equals("sr no", ignoreCase = true) }) {
+                headerRowIndex = rIdx
+                break
+            }
+        }
+
         // Pre-scan to check if the tab contains any explicit date column
         var tabHasDates = false
-        for (row in rawRows) {
+        val scanStart = if (headerRowIndex >= 0) headerRowIndex + 1 else 0
+        for (rIdx in scanStart until rawRows.size) {
+            val row = rawRows[rIdx]
             for (cell in row) {
                 if (parseDateInfo(cell) != null) {
                     tabHasDates = true
@@ -392,88 +468,87 @@ object GoogleSheetSyncEngine {
             if (tabHasDates) break
         }
 
-        for (row in rawRows) {
+        for (rIdx in scanStart until rawRows.size) {
+            val row = rawRows[rIdx]
             if (row.isEmpty()) continue
-
-            // Check if row is a header row
-            val rowJoined = row.joinToString(" ").lowercase()
-            if ((rowJoined.contains("date") && rowJoined.contains("phone")) ||
-                rowJoined.contains("s.no") || rowJoined.contains("sr no") || rowJoined.contains("serial") ||
-                (row.getOrNull(0)?.lowercase()?.contains("number") == true) ||
-                (row.getOrNull(1)?.lowercase()?.contains("number") == true) ||
-                (row.getOrNull(1)?.lowercase()?.contains("remark") == true)
-            ) {
-                continue
-            }
 
             // Extract Date, Phone Number, and Remarks across cells
             var phone = ""
             var remarkRaw = ""
             var notesRaw = ""
-            var phoneCellIndex = -1
             var rowDateStr = ""
             var isRowToday = !tabHasDates // If no dates in sheet at all, all rows belong to today's active batch
 
-            // 1. Scan for Date cells first
-            for (i in row.indices) {
-                val dateInfo = parseDateInfo(row[i])
-                if (dateInfo != null) {
-                    rowDateStr = dateInfo.first
-                    isRowToday = dateInfo.second
-                    break
+            // 1. Scan for Date cells
+            if (dateCol != -1 && dateCol < row.size) {
+                val dInfo = parseDateInfo(row[dateCol])
+                if (dInfo != null) {
+                    rowDateStr = dInfo.first
+                    isRowToday = dInfo.second
+                }
+            }
+            if (rowDateStr.isBlank()) {
+                for (cell in row) {
+                    val dInfo = parseDateInfo(cell)
+                    if (dInfo != null) {
+                        rowDateStr = dInfo.first
+                        isRowToday = dInfo.second
+                        break
+                    }
                 }
             }
 
             // 2. Scan for Phone Number (skipping date cells)
-            for (i in row.indices) {
-                val cell = row[i].trim()
-                if (parseDateInfo(cell) != null) continue // Skip date cells
-
-                val digits = cell.filter { it.isDigit() }
-                // Valid phone: 10 digits, or 12 starting with 91, or 11 starting with 0, or standard 8..15 digits
-                if (digits.length in 8..15 && phone.isBlank()) {
-                    // Avoid picking pure row index numbers (e.g. 1, 2, 3)
-                    if (digits.length >= 10 || (digits.length >= 8 && !cell.contains("/") && !cell.contains("-"))) {
-                        phone = digits
-                        phoneCellIndex = i
-                    }
+            if (phoneCol != -1 && phoneCol < row.size) {
+                val digits = row[phoneCol].filter { it.isDigit() }
+                if (digits.length in 8..15) {
+                    phone = digits
                 }
             }
-
-            // If phone found, look for remark in subsequent cells
-            if (phoneCellIndex != -1) {
-                for (i in (phoneCellIndex + 1) until row.size) {
-                    val cell = row[i].trim()
-                    if (parseDateInfo(cell) != null) continue // Skip date cells
-                    if (cell.isNotBlank() && remarkRaw.isBlank()) {
-                        remarkRaw = cell
-                    } else if (cell.isNotBlank() && notesRaw.isBlank()) {
-                        notesRaw = cell
+            if (phone.isBlank()) {
+                for (cell in row) {
+                    val cellTrim = cell.trim()
+                    if (parseDateInfo(cellTrim) != null) continue
+                    val digits = cellTrim.filter { it.isDigit() }
+                    if (digits.length in 8..15) {
+                        if (digits.length >= 10 || (!cellTrim.contains("/") && !cellTrim.contains("-"))) {
+                            phone = digits
+                            break
+                        }
                     }
-                }
-            } else {
-                // Fallback: check columns without date
-                val col0 = row.getOrNull(0)?.trim() ?: ""
-                val col1 = row.getOrNull(1)?.trim() ?: ""
-                val col0Digits = col0.filter { it.isDigit() }
-                val col1Digits = col1.filter { it.isDigit() }
-
-                if (col1Digits.length >= 8 && parseDateInfo(col1) == null) {
-                    phone = col1Digits
-                    remarkRaw = row.getOrNull(2) ?: ""
-                    notesRaw = row.getOrNull(3) ?: ""
-                } else if (col0Digits.length >= 8 && parseDateInfo(col0) == null) {
-                    phone = col0Digits
-                    remarkRaw = row.getOrNull(1) ?: ""
-                    notesRaw = row.getOrNull(2) ?: ""
                 }
             }
 
             if (phone.isBlank()) continue
 
+            // 3. Scan for Remark
+            if (remarkCol != -1 && remarkCol < row.size) {
+                val cell = row[remarkCol].trim()
+                if (RemarkConstants.isValidRemark(cell)) {
+                    remarkRaw = cell
+                }
+            }
+            if (remarkRaw.isBlank()) {
+                for (cell in row) {
+                    val cellTrim = cell.trim()
+                    if (parseDateInfo(cellTrim) != null) continue
+                    val digits = cellTrim.filter { it.isDigit() }
+                    if (digits.length >= 8) continue // skip phone number
+                    if (RemarkConstants.isValidRemark(cellTrim)) {
+                        remarkRaw = cellTrim
+                        break
+                    }
+                }
+            }
+
+            // 4. Notes / Link
+            if (notesCol != -1 && notesCol < row.size) {
+                notesRaw = row[notesCol].trim()
+            }
+
             // Normalize actual Google Sheet remark
             val normalizedRemark = RemarkConstants.normalize(remarkRaw)
-            val hasRemark = normalizedRemark.isNotBlank() && !normalizedRemark.equals(RemarkConstants.PENDING, ignoreCase = true)
+            val hasRemark = RemarkConstants.isValidRemark(normalizedRemark)
 
             val status = when {
                 normalizedRemark.equals(RemarkConstants.INTERESTED, ignoreCase = true) -> "INTERESTED"
@@ -517,6 +592,18 @@ object GoogleSheetSyncEngine {
                 )
             )
             sourceOrder++
+        }
+
+        // If tab had dates but none matched calendar today, mark the latest batch date as active current data
+        if (tabHasDates && leads.none { it.isToday } && leads.isNotEmpty()) {
+            val latestDate = leads.map { it.dateStr }.filter { it.isNotBlank() }.lastOrNull()
+            if (latestDate != null) {
+                for (i in leads.indices) {
+                    if (leads[i].dateStr == latestDate) {
+                        leads[i] = leads[i].copy(isToday = true)
+                    }
+                }
+            }
         }
 
         return leads
