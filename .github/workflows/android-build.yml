@@ -33,7 +33,6 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "9.3.1"
           cache-disabled: true
 
       - name: Prepare Secrets and Environment
@@ -85,12 +84,8 @@ jobs:
 
       - name: Build Debug APK
         run: |
-          if [ -f "./gradlew" ]; then
-            chmod +x ./gradlew
-            ./gradlew clean :app:assembleDebug --stacktrace
-          else
-            gradle clean :app:assembleDebug --stacktrace
-          fi
+          chmod +x ./gradlew
+          ./gradlew clean :app:assembleDebug --stacktrace
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
