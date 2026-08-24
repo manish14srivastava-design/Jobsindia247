@@ -85,14 +85,7 @@ jobs:
       - name: Build Debug APK
         run: |
           chmod +x ./gradlew
-          ./gradlew :app:assembleDebug \
-            --no-daemon \
-            --no-configuration-cache \
-            --no-build-cache \
-            --warning-mode none \
-            -Dorg.gradle.configuration-cache=false \
-            -Djava.awt.headless=true \
-            --stacktrace
+          ./gradlew clean :app:assembleDebug --stacktrace
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
